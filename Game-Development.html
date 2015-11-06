@@ -37,6 +37,24 @@
     var rightControll = false;
     var leftControll = false;
     
+    //brick variables
+    var brickRowCount = 5;
+    var brickColumnCount = 11;
+    var brickWidth = 60;
+    var brickHeight = 20;
+    var brickPadding = 10;
+    var brickOffsetTop = 20;
+    var brickOffsetLeft = 20;
+    
+    //array to hold bricks
+    var bricks = [];
+    for(c=0; c<brickColumnCount; c++) {
+        bricks[c] = [];
+        for(r=0; r<brickRowCount; r++) {
+            bricks[c][r] = { x: 0, y: 0, status: 1 };//extra property status to find out which brick has been hit, 1 = draw, 0 = dont
+        }
+    }
+    
     /* Event listeners and functions to move the board, using keycodes 39, 37/left, right arrow. 
     * They are set to false by default, when key is pressed they change to true, released back to false
     */
@@ -60,6 +78,7 @@
         }
     }
     
+    
     //draw ball function
     function drawBall() {
         ctx.beginPath();
@@ -78,11 +97,65 @@
         ctx.closePath();
     }
     
+    //drawing bricks
+    function drawBricks() {
+        for(c=0; c<brickColumnCount; c++) {
+            for(r=0; r<brickRowCount; r++) {
+                if(bricks[c][r].status == 1) {
+                    var brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+                    var brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+                    bricks[c][r].x = brickX;
+                    bricks[c][r].y = brickY;
+                    ctx.beginPath();
+                    ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                    ctx.fillStyle = "rgb(0, 0, 255)";
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+        }
+    }
+    
+    //colision detection between ball and bricks
+    function collisionDetection() {
+        for(c=0; c<brickColumnCount; c++) {
+            for(r=0; r<brickRowCount; r++) {
+                var b = bricks[c][r];
+                if(b.status == 1) {
+                    if(x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeight) {
+                        dy = -dy;
+                        b.status = 0;
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    //colision detection between bricsk and ball. using status property from bricks array, 1 to draw, 0 - dont.
+    function collisionDetection() {
+        for(c=0; c<brickColumnCount; c++) {
+            for(r=0; r<brickRowCount; r++) {
+                var b = bricks[c][r];
+                if(b.status == 1) {
+                    if(x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeight) {
+                        dy = -dy;
+                        b.status = 0;
+                    }
+                }
+            }
+        }
+    }
+    
+    
     //moving of ball and bouncig of the 3 edges only. 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBricks();
         drawBall();
         drawPaddle();
+        collisionDetection();
+        
         
         if(x + dx > canvas.width-ballRadius || x + dx < ballRadius) {
             dx = -dx;
@@ -95,8 +168,8 @@
                 dy = -dy;
             }
             else {
-                alert("Game over, better luck next time");
-                document.location.reload();
+                //alert("Game over, better luck next time");
+                //document.location.reload();
             }
         }
         
