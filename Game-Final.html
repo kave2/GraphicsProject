@@ -1,14 +1,221 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    ...
-    <style type="text/css"></style>
-  </head>
-  <body>
     
-    <script type="text/javascript">
-      
+<head>
+    <meta charset="utf-8" />
+    <title>My Canvas Game</title>
+    <style>
+      body {
+          background-color: white;
+      }
+      canvas {
+          border: 2px solid;
+          background: linear-gradient(white, black);
+      }
+    </style>
+</head> 
+    
+    
+<body>
+
+<canvas id="myGame" width="800" height="600"></canvas>
+
+<script>
+    var canvas = document.getElementById("myGame");
+    var ctx = canvas.getContext("2d");
+    
+    //ball variables
+    var ballRadius = 15;
+    var x = canvas.width/2;
+    var y = canvas.height-30;
+    var dx = 2;
+    var dy = -2;
+    
+    //paddle variables
+    var paddleHeight = 12;
+    var paddleWidth = 100;
+    var paddleX = (canvas.width-paddleWidth)/2;
+    var rightControll = false;
+    var leftControll = false;
+    
+    //brick variables
+    var brickRowCount = 5;
+    var brickColumnCount = 11;
+    var brickWidth = 60;
+    var brickHeight = 20;
+    var brickPadding = 10;
+    var brickOffsetTop = 20;
+    var brickOffsetLeft = 20;
+    
+    var scores = 0;
+    var lives = 3;
+    
+    //array to hold bricks
+    var bricks = [];
+    for(c=0; c<brickColumnCount; c++) {
+        bricks[c] = [];
+        for(r=0; r<brickRowCount; r++) {
+            bricks[c][r] = { x: 0, y: 0, status: 1 };//extra property status to find out which brick has been hit, 1 = draw, 0 = dont
+        }
+    }
+    
+    /* Event listeners and functions to move the board, using keycodes 39, 37/left, right arrow. 
+    * They are set to false by default, when key is pressed they change to true, released back to false
+    */
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
+    
+    function keyDownHandler(e) {
+        if(e.keyCode == 39) {
+            rightControll = true;
+        }
+        else if(e.keyCode == 37) {
+            leftControll = true;
+        }
+    }
+    function keyUpHandler(e) {
+        if(e.keyCode == 39) {
+            rightControll = false;
+        }
+        else if(e.keyCode == 37) {
+            leftControll = false;
+        }
+    }
+    
+    
+    //draw ball function
+    function drawBall() {
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+        ctx.fillStyle = "rgb(255, 255, 255)";
+        ctx.fill();
+        ctx.closePath();
+    }
+    
+    //draw paddle function
+    function drawPaddle() {
+        ctx.beginPath();
+        ctx.rect(paddleX, canvas.height-paddleHeight, paddleWidth, paddleHeight);
+        ctx.fillStyle = "rgb(0, 128, 0)";
+        ctx.fill();
+        ctx.closePath();
+    }
+    
+    //drawing bricks
+    function drawBricks() {
+        for(c=0; c<brickColumnCount; c++) {
+            for(r=0; r<brickRowCount; r++) {
+                if(bricks[c][r].status == 1) {
+                    var brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+                    var brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+                    bricks[c][r].x = brickX;
+                    bricks[c][r].y = brickY;
+                    ctx.beginPath();
+                    ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                    ctx.fillStyle = "rgb(255, 165, 0)";
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+        }
+    }
+    
+    //colision detection between ball and bricks; status of bricks hit by status parametre; if all bricks hit, you win alert
+    function collisionDetection() {
+        for(c=0; c<brickColumnCount; c++) {
+            for(r=0; r<brickRowCount; r++) {
+                var b = bricks[c][r];
+                if(b.status == 1) {
+                    if(x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeight) {
+                        dy = -dy;
+                        b.status = 0;
+                        scores++;
+                        
+                        if(scores == brickRowCount*brickColumnCount) {
+                            alert("Congratulations, you win!");
+                            document.location.reload();
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+ 
+    //drawing of scores
+    function drawScores() {
+        ctx.font = "15px Arial";
+        ctx.fillStyle = "rgb(255, 165, 0)"
+        ctx.fillText("Bricks hit: " + scores, 20, 15);
+    }
+    
+    //draw lives left
+    function drawLives() {
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "rgb(255, 165, 0)";
+        ctx.fillText("Lives left: " + lives, canvas.width - 100 , 15);
+    }
+    //draw the logo of the game
+    function drawLogo() {
+        ctx.font = "70px Arial";
+        ctx.fillStyle = "rgb(255, 165, 0)";
+        ctx.fillText("Wall Breaker", 200 , 300);
+    }
+    
+    //draw function that runs the game and draws out all the elemetns of the game
+    
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBricks();
+        drawBall();
+        drawPaddle();
+        drawScores();
+        drawLives();
+        drawLogo();
+        collisionDetection();
         
-    </script>
-  </body>
+        
+        if(x + dx > canvas.width-ballRadius || x + dx < ballRadius) {
+            dx = -dx;
+        }
+        if(y + dy < ballRadius) {
+            dy = -dy;
+        }
+        else if(y + dy > canvas.height-ballRadius) {
+            if(x > paddleX && x < paddleX + paddleWidth) {
+                dy = -dy;
+            }
+            else {
+                lives--;
+                if(!lives) {
+                    alert("Game over, better luck next time!");
+                    document.location.reload();
+                }
+                else {
+                    x = canvas.width/2;
+                    y = canvas.height-30;
+                    dx = 3;
+                    dy = -3;
+                    paddleX = (canvas.width-paddleWidth)/2;
+                }
+            }
+        }
+
+        //making sure the paddle stays on canvas when it reaches edges
+        if(rightControll && paddleX < canvas.width-paddleWidth) {
+            paddleX += 5;
+        }
+        else if(leftControll && paddleX > 0) {
+            paddleX -= 5;
+        }
+        x += dx;
+        y += dy;
+        
+        window.requestAnimationFrame(draw);
+    }
+    
+    draw();
+</script>
+
+</body>
 </html>
